@@ -1,0 +1,5 @@
+{
+  "name": "Nolan Diagram Political Compass",
+  "description": "An interactive quiz to determine your position on the Nolan Diagram, which measures political views along two axes: economic freedom and personal freedom. Answer a series of questions to see your results plotted on the chart and get an explanation of your political leaning.",
+  "requestFramePermissions": []
+}
