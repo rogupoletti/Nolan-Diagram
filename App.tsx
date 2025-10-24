@@ -174,15 +174,35 @@ const QuizFlow: React.FC = () => {
 const App: React.FC = () => {
   const [route, setRoute] = useState<'quiz' | 'admin'>('quiz');
   const { setLanguage } = useContext(LanguageContext);
+  const validLanguages: Language[] = ['en', 'es', 'pt-BR'];
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
-      const hashParts = hash.replace(/^#\//, '').split('/');
-      
-      const lang = (hashParts[0] || 'en') as Language;
-      const currentRoute = hashParts[1] === 'admin' ? 'admin' : 'quiz';
+      const path = hash.replace(/^#\/?/, '');
+      const hashParts = path.split('/');
 
+      let lang: Language = 'en';
+      let currentRoute: 'quiz' | 'admin' = 'quiz';
+      
+      // FIX: This comparison appears to be unintentional because the types 'Language' and '"admin"' have no overlap.
+      // The original code incorrectly asserted that the first part of the hash was always a `Language`,
+      // which caused a type error when it was 'admin'. The logic is now corrected to handle both cases.
+      const potentialLang = hashParts[0];
+      const potentialRoute = hashParts[1];
+
+      const matchedLang = validLanguages.find(l => l === potentialLang);
+
+      if (matchedLang) {
+        lang = matchedLang;
+        if (potentialRoute === 'admin') {
+          currentRoute = 'admin';
+        }
+      } else if (potentialLang === 'admin') {
+        currentRoute = 'admin';
+        // lang remains 'en' (default)
+      }
+      
       setLanguage(lang);
       setRoute(currentRoute);
     };

@@ -1,14 +1,17 @@
-import { QuizQuestion, Submission } from '../types';
+import { QuizQuestion, Submission, Language } from '../types';
 import { db } from './firebase';
 import { 
   collection, addDoc, getDocs, getDoc, doc, 
-  query, orderBy, Timestamp, updateDoc, deleteDoc 
+  query, orderBy, Timestamp, updateDoc, deleteDoc, setDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { INITIAL_QUIZ_QUESTIONS } from '../constants';
+import { getPoliticalCategoryDescription } from './geminiService';
 
 const SUBMISSIONS_COLLECTION = 'submissions';
 const QUESTIONS_COLLECTION = 'questions';
 const ADMINS_COLLECTION = 'admins';
+const CATEGORY_DESCRIPTIONS_COLLECTION = 'category_descriptions';
+
 
 export const getSubmissions = async (): Promise<Submission[]> => {
   try {
@@ -115,6 +118,35 @@ export const deleteQuestion = async (id: string): Promise<void> => {
  {
     console.error("Failed to delete question from Firestore", error);
     throw error;
+  }
+};
+
+export const getCategoryDescription = async (categoryKey: string, categoryName: string, lang: Language): Promise<string> => {
+  try {
+    const docId = `${categoryKey}_${lang}`;
+    const docRef = doc(db, CATEGORY_DESCRIPTIONS_COLLECTION, docId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data().description;
+    } else {
+      // Not in cache, fetch from Gemini
+      console.log(`Cache miss for ${docId}. Fetching from Gemini API...`);
+      const description = await getPoliticalCategoryDescription(categoryName, lang);
+      
+      // Save to Firestore for future requests
+      await setDoc(docRef, { 
+        description, 
+        categoryKey, 
+        lang, 
+        timestamp: Timestamp.now() 
+      });
+
+      return description;
+    }
+  } catch (error) {
+    console.error("Failed to get or create category description:", error);
+    return "Could not load description. Please try again later.";
   }
 };
 

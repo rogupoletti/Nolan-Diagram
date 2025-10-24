@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { QuizQuestion } from '../types';
 import { ANSWER_OPTIONS } from '../constants';
 import Button from './ui/Button';
@@ -42,14 +42,26 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ question, onAnswer, onBack, cur
   const { t } = useTranslation();
   const { language } = useContext(LanguageContext);
   const [selectedValue, setSelectedValue] = useState<number | null>(null);
+  const [isAnswered, setIsAnswered] = useState(false);
+
+  useEffect(() => {
+    setSelectedValue(null);
+    setIsAnswered(false);
+  }, [question]);
+
 
   const questionText = question.text[language] || question.text.en;
 
-  const handleNext = () => {
-    if (selectedValue !== null) {
-      onAnswer(question, selectedValue);
-      setSelectedValue(null);
-    }
+  const handleSelectAnswer = (value: number) => {
+    if (isAnswered) return; // Prevent double-answering
+
+    setIsAnswered(true);
+    setSelectedValue(value);
+
+    // Wait a bit for the user to see their selection, then proceed
+    setTimeout(() => {
+      onAnswer(question, value);
+    }, 300);
   };
   
   const AnswerOption = ({ option, selected, onSelect }: { option: { value: number, labelKey: string }, selected: number | null, onSelect: (value: number) => void}) => {
@@ -57,11 +69,11 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ question, onAnswer, onBack, cur
     return (
       <div 
         onClick={() => onSelect(option.value)} 
-        className={`border rounded-lg p-4 flex items-center cursor-pointer transition-colors ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-300 bg-white hover:bg-gray-50'}`}
+        className={`border rounded-lg p-4 flex items-center transition-colors ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-300 bg-white hover:bg-gray-50'} ${isAnswered ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
         role="radio"
         aria-checked={isSelected}
-        tabIndex={0}
-        onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && onSelect(option.value)}
+        tabIndex={isAnswered ? -1 : 0}
+        onKeyDown={(e) => !isAnswered && (e.key === ' ' || e.key === 'Enter') && onSelect(option.value)}
       >
         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-blue-600' : 'border-gray-400'}`}>
           {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-600"></div>}
@@ -82,13 +94,12 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ question, onAnswer, onBack, cur
         <h2 className="text-xl md:text-2xl font-bold mb-6 text-gray-900">{questionText}</h2>
         <div className="space-y-3">
           {ANSWER_OPTIONS.map((option) => (
-            <AnswerOption key={option.value} option={option} selected={selectedValue} onSelect={setSelectedValue} />
+            <AnswerOption key={option.value} option={option} selected={selectedValue} onSelect={handleSelectAnswer} />
           ))}
         </div>
       </div>
-      <div className="p-4 border-t border-gray-200 mt-auto grid grid-cols-2 gap-4">
-        <Button variant="secondary" onClick={onBack} disabled={currentQuestion === 1}>{t('buttons.back')}</Button>
-        <Button onClick={handleNext} disabled={selectedValue === null}>{t('buttons.next')}</Button>
+      <div className="p-4 border-t border-gray-200 mt-auto">
+        <Button variant="secondary" onClick={onBack} disabled={currentQuestion === 1} fullWidth>{t('buttons.back')}</Button>
       </div>
     </div>
   );

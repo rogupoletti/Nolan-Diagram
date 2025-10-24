@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Results } from '../types';
 import Button from './ui/Button';
 import NolanDiagram from './NolanDiagram';
-import { getPoliticalCategoryDescription } from '../services/geminiService';
+import { getCategoryDescription } from '../services/dbService';
 import { useTranslation } from '../hooks/useTranslation';
 import { LanguageContext } from '../context/LanguageContext';
 
@@ -48,13 +48,13 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
   useEffect(() => {
     const fetchDescription = async () => {
       setIsLoading(true);
-      const desc = await getPoliticalCategoryDescription(categoryName, language);
+      const desc = await getCategoryDescription(categoryKey, categoryName, language);
       setDescription(desc);
       setIsLoading(false);
     };
 
     fetchDescription();
-  }, [categoryName, language]);
+  }, [categoryKey, categoryName, language]);
 
   return (
     <div className="flex flex-col flex-grow">

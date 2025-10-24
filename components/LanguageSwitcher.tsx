@@ -17,10 +17,17 @@ const LanguageSwitcher: React.FC = () => {
 
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
-    const hash = window.location.hash.replace(/^#\//, '');
-    const hashParts = hash.split('/');
-    // The language is always the first part of the hash
-    const routePart = hashParts.length > 1 ? `/${hashParts.slice(1).join('/')}` : '';
+    
+    const path = window.location.hash.replace(/^#\/?/, '');
+    const hashParts = path.split('/');
+    const validLanguages = LANGUAGES.map(l => l.id);
+
+    let routePart = '';
+    // Check if the current route is admin
+    if (hashParts[0] === 'admin' || (validLanguages.includes(hashParts[0] as Language) && hashParts[1] === 'admin')) {
+      routePart = '/admin';
+    }
+
     window.location.hash = `/${lang}${routePart}`;
     setIsOpen(false);
   };

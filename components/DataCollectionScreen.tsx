@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { UserData } from '../types';
 import Button from './ui/Button';
 import { useTranslation } from '../hooks/useTranslation';
+import { LanguageContext } from '../context/LanguageContext';
+import { Country, countries } from '../data/countries';
+import PhoneInput from './ui/PhoneInput';
+import { isValidPhoneNumber, type CountryCode } from 'libphonenumber-js/min';
 
 interface HeaderProps {
   title: string;
@@ -34,10 +38,27 @@ interface DataCollectionScreenProps {
 
 const DataCollectionScreen: React.FC<DataCollectionScreenProps> = ({ onSubmit, onBack }) => {
   const { t } = useTranslation();
+  const { language } = useContext(LanguageContext);
+
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [nationalPhone, setNationalPhone] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries.find(c => c.code === 'US')!);
+
   const [errors, setErrors] = useState({ email: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    let defaultCountryCode = 'US';
+    if (language === 'es') {
+      defaultCountryCode = 'ES'; // Spain
+    } else if (language === 'pt-BR') {
+      defaultCountryCode = 'BR'; // Brazil
+    }
+    const country = countries.find(c => c.code === defaultCountryCode);
+    if (country) {
+      setSelectedCountry(country);
+    }
+  }, [language]);
 
 
   const validate = (): boolean => {
@@ -49,9 +70,9 @@ const DataCollectionScreen: React.FC<DataCollectionScreenProps> = ({ onSubmit, o
       isValid = false;
     }
 
-    if (!/^\+?[1-9]\d{1,14}$/.test(phone.replace(/\s/g, ''))) {
-      newErrors.phone = t('form.errors.invalidPhone');
-      isValid = false;
+    if (!nationalPhone.trim() || !isValidPhoneNumber(selectedCountry.dial_code + nationalPhone, selectedCountry.code as CountryCode)) {
+        newErrors.phone = t('form.errors.invalidPhone');
+        isValid = false;
     }
     
     setErrors(newErrors);
@@ -62,7 +83,8 @@ const DataCollectionScreen: React.FC<DataCollectionScreenProps> = ({ onSubmit, o
     e.preventDefault();
     if (validate()) {
       setIsSubmitting(true);
-      await onSubmit({ email, phone });
+      const fullPhoneNumber = selectedCountry.dial_code + nationalPhone;
+      await onSubmit({ email, phone: fullPhoneNumber });
       // No need to set isSubmitting to false, as the component will unmount
     }
   };
@@ -92,15 +114,13 @@ const DataCollectionScreen: React.FC<DataCollectionScreenProps> = ({ onSubmit, o
           </div>
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 sr-only">{t('form.phoneLabel')}</label>
-            <input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm py-3 px-4 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
-              placeholder={t('form.phonePlaceholder')}
-              required
+            <PhoneInput
+              selectedCountry={selectedCountry}
+              onCountryChange={setSelectedCountry}
+              phoneNumber={nationalPhone}
+              onPhoneNumberChange={setNationalPhone}
               disabled={isSubmitting}
+              placeholder={t('form.phonePlaceholder')}
             />
             {errors.phone && <p className="mt-2 text-sm text-red-600">{errors.phone}</p>}
           </div>

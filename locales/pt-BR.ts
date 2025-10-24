@@ -22,7 +22,7 @@ export const ptBR = {
     phonePlaceholder: 'Número de telefone',
     errors: {
       invalidEmail: 'Por favor, insira um endereço de e-mail válido.',
-      invalidPhone: 'Por favor, insira um número de telefone válido (ex: +5511912345678).',
+      invalidPhone: 'Por favor, insira um número de telefone válido para o país selecionado.',
     },
   },
   results: {
