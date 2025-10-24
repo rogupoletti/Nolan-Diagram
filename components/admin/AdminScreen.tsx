@@ -83,7 +83,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ onLogout }) => {
         </nav>
       </div>
 
-      <div className="py-6 flex-grow">
+      <div className="py-6 flex-grow flex flex-col">
         {activeTab === 'submissions' && <SubmissionsViewer />}
         {activeTab === 'questions' && (
           <QuestionManager

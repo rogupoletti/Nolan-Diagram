@@ -218,7 +218,7 @@ const App: React.FC = () => {
 
   return (
     <main className="font-sans min-h-screen flex items-center justify-center p-4">
-      <div className="relative w-full max-w-md mx-auto bg-white shadow-xl rounded-2xl flex flex-col overflow-hidden" style={{ minHeight: '600px', maxHeight: '90vh' }}>
+      <div className="relative w-full max-w-md mx-auto bg-white shadow-xl rounded-2xl flex flex-col overflow-y-auto" style={{ minHeight: '600px', maxHeight: '90vh' }}>
         <div className="absolute top-4 right-4 z-20">
           <LanguageSwitcher />
         </div>

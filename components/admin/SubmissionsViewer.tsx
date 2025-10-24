@@ -68,7 +68,7 @@ const SubmissionsViewer: React.FC = () => {
     }
 
     return (
-      <div className="space-y-3 overflow-y-auto pr-2" style={{maxHeight: 'calc(100vh - 350px)'}}>
+      <div className="space-y-3 overflow-y-auto pr-2 flex-grow">
         {filteredSubmissions.map((submission) => (
           <div key={submission.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <div className="flex justify-between items-start">
@@ -91,8 +91,8 @@ const SubmissionsViewer: React.FC = () => {
   const inputClass = "w-full border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 bg-gray-50";
 
   return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 bg-gray-100 rounded-lg border">
+    <div className="flex flex-col h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 bg-gray-100 rounded-lg border flex-shrink-0">
         <input type="text" placeholder={t('admin.submissions.filterEmail')} value={emailFilter} onChange={e => setEmailFilter(e.target.value)} className={inputClass} />
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className={inputClass}>
           <option value="">{t('admin.submissions.allCategories')}</option>
@@ -101,7 +101,7 @@ const SubmissionsViewer: React.FC = () => {
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inputClass} />
         <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputClass} />
       </div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h3 className="text-lg font-bold text-gray-800">{t('admin.submissions.showingCount', { count: filteredSubmissions.length, total: submissions.length })}</h3>
         <Button onClick={() => exportSubmissionsToCSV(filteredSubmissions)} disabled={filteredSubmissions.length === 0}>
           {t('buttons.downloadCsv')}

@@ -12,7 +12,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title, onBack }) => (
-  <div className="grid grid-cols-[4rem_1fr_4rem] items-center h-16 border-b border-gray-200">
+  <div className="grid grid-cols-[4rem_1fr_4rem] items-center h-16 border-b border-gray-200 flex-shrink-0">
     <div className="flex justify-start pl-2">
       {onBack && (
         <button onClick={onBack} className="p-2" aria-label="Go back">
@@ -55,11 +55,26 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
 
     fetchDescription();
   }, [categoryKey, categoryName, language]);
+  
+  const renderDescription = (text: string) => {
+    // A simple markdown parser for **bold** text and newlines.
+    return text.split('\n').map((paragraph, i) => (
+      <p key={i}>
+        {paragraph.split(/(\*\*.*?\*\*)/g).map((part, j) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={j}>{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        })}
+      </p>
+    ));
+  };
+
 
   return (
     <div className="flex flex-col flex-grow">
       <Header title={t('results.title')} onBack={onBack}/>
-      <div className="p-6 text-center flex-grow">
+      <div className="p-6 text-center flex-grow overflow-y-auto min-h-0">
         <h2 className="text-3xl font-extrabold text-gray-900 mb-4">{t('results.yourCompass')}</h2>
         
         <div className="max-w-xs mx-auto my-6">
@@ -75,11 +90,11 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
             </div>
           ) : (
-            <p className="text-gray-600">{description}</p>
+            <div className="text-gray-600 space-y-2">{renderDescription(description)}</div>
           )}
         </div>
       </div>
-      <div className="p-4 mt-auto space-y-3">
+      <div className="p-4 space-y-3 flex-shrink-0 border-t border-gray-200">
         <Button onClick={() => alert('Share feature coming soon!')} fullWidth>
           {t('buttons.shareResults')}
         </Button>

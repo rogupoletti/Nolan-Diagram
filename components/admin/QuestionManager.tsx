@@ -62,12 +62,12 @@ const QuestionManager: React.FC<QuestionManagerProps> = ({ questions, onAdd, onU
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h3 className="text-lg font-bold text-gray-800">{t('admin.questions.manageTitle', { count: questions.length })}</h3>
         <Button onClick={handleAddNew}>{t('buttons.addNewQuestion')}</Button>
       </div>
-      <div className="space-y-3" style={{maxHeight: 'calc(100vh - 300px)'}}>
+      <div className="space-y-3 overflow-y-auto flex-grow pr-2">
         {questions.length === 0 && (
             <p className="text-center text-gray-500 py-8">{t('admin.questions.noneFound')}</p>
         )}
