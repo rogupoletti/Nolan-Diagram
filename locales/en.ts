@@ -52,6 +52,7 @@ export const en = {
     viewResults: 'View Results',
     retakeQuiz: 'Retake Quiz',
     shareResults: 'Share Results',
+    copied: 'Link Copied!',
     saving: 'Saving...',
     logout: 'Logout',
     downloadCsv: 'Download as CSV',
@@ -84,6 +85,10 @@ export const en = {
     economic_left: 'Economic Left',
     social_libertarian: 'Social Libertarian',
     social_authoritarian: 'Social Authoritarian',
+  },
+  share: {
+    title: 'My Political Compass: {category}',
+    text: 'I took the quiz and I\'m a {category}! This generally means: "{description}" Find out your own political compass here:',
   },
   admin: {
     title: 'Admin Panel',

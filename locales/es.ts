@@ -52,6 +52,7 @@ export const es = {
     viewResults: 'Ver Resultados',
     retakeQuiz: 'Repetir Cuestionario',
     shareResults: 'Compartir Resultados',
+    copied: '¡Enlace Copiado!',
     saving: 'Guardando...',
     logout: 'Cerrar Sesión',
     downloadCsv: 'Descargar como CSV',
@@ -84,6 +85,10 @@ export const es = {
     economic_left: 'Izquierda Económica',
     social_libertarian: 'Libertario Social',
     social_authoritarian: 'Autoritario Social',
+  },
+  share: {
+    title: 'Mi Compás Político: {category}',
+    text: '¡Hice el cuestionario y soy {category}! Esto generalmente significa: "{description}" Descubre tu propio compás político aquí:',
   },
   admin: {
     title: 'Panel de Administrador',

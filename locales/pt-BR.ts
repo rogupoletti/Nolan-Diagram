@@ -52,6 +52,7 @@ export const ptBR = {
     viewResults: 'Ver Resultados',
     retakeQuiz: 'Refazer Questionário',
     shareResults: 'Compartilhar Resultados',
+    copied: 'Link Copiado!',
     saving: 'Salvando...',
     logout: 'Sair',
     downloadCsv: 'Baixar como CSV',
@@ -84,6 +85,10 @@ export const ptBR = {
     economic_left: 'Esquerda Econômica',
     social_libertarian: 'Libertário Social',
     social_authoritarian: 'Autoritário Social',
+  },
+  share: {
+    title: 'Minha Bússola Política: {category}',
+    text: 'Eu fiz o questionário e sou {category}! Isso geralmente significa: "{description}" Descubra sua própria bússola política aqui:',
   },
   admin: {
     title: 'Painel do Administrador',

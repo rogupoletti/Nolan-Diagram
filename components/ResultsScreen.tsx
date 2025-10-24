@@ -41,6 +41,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
   const { language } = useContext(LanguageContext);
   const [description, setDescription] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied'>('idle');
 
   const { categoryKey, economic, personal } = results;
   const categoryName = t(`categories.${categoryKey}`);
@@ -55,6 +56,44 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
 
     fetchDescription();
   }, [categoryKey, categoryName, language]);
+
+  const handleShare = async () => {
+    // A simple function to strip markdown-like syntax for sharing
+    const cleanDescription = description.replace(/\*\*/g, '');
+
+    const shareTitle = t('share.title', { category: categoryName });
+    const shareText = t('share.text', {
+        category: categoryName,
+        // Truncate description for sharing
+        description: cleanDescription.substring(0, 120) + '...'
+    });
+
+    const shareData = {
+        title: shareTitle,
+        text: shareText,
+        url: window.location.origin + window.location.pathname,
+    };
+
+    if (navigator.share) {
+        try {
+            await navigator.share(shareData);
+        } catch (error) {
+            // Silently catch user cancellation of share dialog
+            console.log('Web Share API was cancelled or failed.', error);
+        }
+    } else {
+        // Fallback for browsers that don't support Web Share API (e.g., desktop)
+        const fallbackText = `${shareTitle}\n\n${shareText}\n\n${shareData.url}`;
+        try {
+            await navigator.clipboard.writeText(fallbackText);
+            setShareStatus('copied');
+            setTimeout(() => setShareStatus('idle'), 2500); // Reset button text after 2.5s
+        } catch (err) {
+            console.error('Failed to copy to clipboard: ', err);
+            alert('Could not copy link to clipboard. Please share it manually.');
+        }
+    }
+  };
   
   const renderDescription = (text: string) => {
     // A simple markdown parser for **bold** text and newlines.
@@ -95,8 +134,8 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
         </div>
       </div>
       <div className="p-4 space-y-3 flex-shrink-0 border-t border-gray-200">
-        <Button onClick={() => alert('Share feature coming soon!')} fullWidth>
-          {t('buttons.shareResults')}
+        <Button onClick={handleShare} fullWidth>
+          {shareStatus === 'copied' ? t('buttons.copied') : t('buttons.shareResults')}
         </Button>
         <Button onClick={onRestart} variant="secondary" fullWidth>
           {t('buttons.retakeQuiz')}
