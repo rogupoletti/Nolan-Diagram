@@ -90,6 +90,9 @@ export const es = {
     title: 'Mi Compás Político: {category}',
     text: '¡Hice el cuestionario y soy {category}! Esto generalmente significa: "{description}" Descubre tu propio compás político aquí:',
   },
+  categoryScreen: {
+    prompt: '¿Quieres descubrir tu propia brújula política?',
+  },
   admin: {
     title: 'Panel de Administrador',
     logoutFailed: 'Error al cerrar sesión. Por favor, inténtalo de nuevo.',

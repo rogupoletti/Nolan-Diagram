@@ -5,6 +5,7 @@ import QuizScreen from './components/QuizScreen';
 import DataCollectionScreen from './components/DataCollectionScreen';
 import ResultsScreen from './components/ResultsScreen';
 import AdminIndex from './components/admin/AdminIndex';
+import CategoryScreen from './components/CategoryScreen';
 import { saveSubmission, getQuestions } from './services/dbService';
 import { LanguageContext } from './context/LanguageContext';
 import { useTranslation } from './hooks/useTranslation';
@@ -25,8 +26,18 @@ const getPoliticalCategoryKey = (economic: number, personal: number): string => 
     return "centrist";
 };
 
-const QuizFlow: React.FC = () => {
+const CATEGORY_KEYS = ["libertarian", "left_liberal", "right_conservative", "authoritarian", "centrist", "economic_right", "economic_left", "social_libertarian", "social_authoritarian"];
+const VALID_LANGUAGES: Language[] = ['en', 'es', 'pt-BR'];
+
+
+const App: React.FC = () => {
   const { t } = useTranslation();
+  const { language, setLanguage } = useContext(LanguageContext);
+  
+  // App-level routing state
+  const [route, setRoute] = useState<{ view: 'quiz' | 'admin' | 'category'; key?: string }>({ view: 'quiz' });
+
+  // Quiz-specific state
   const [gameState, setGameState] = useState<GameState>(GameState.Welcome);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -34,6 +45,7 @@ const QuizFlow: React.FC = () => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Data fetching
   useEffect(() => {
     const fetchQuestions = async () => {
       setIsLoading(true);
@@ -44,7 +56,60 @@ const QuizFlow: React.FC = () => {
     fetchQuestions();
   }, []);
 
+  // Main router effect
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      const path = hash.replace(/^#\/?/, '');
+      const hashParts = path.split('/'); // e.g., "en/libertarian" -> ["en", "libertarian"]
+
+      let lang: Language = 'en';
+      let routePart = '';
+
+      const firstPartIsLang = VALID_LANGUAGES.includes(hashParts[0] as Language);
+      
+      if (firstPartIsLang) {
+        lang = hashParts[0] as Language;
+        routePart = hashParts[1];
+      } else {
+        routePart = hashParts[0];
+      }
+
+      if (lang !== language) {
+        setLanguage(lang);
+      }
+      
+      if (routePart === 'admin') {
+        setRoute({ view: 'admin' });
+      } else if (CATEGORY_KEYS.includes(routePart)) {
+        setRoute({ view: 'category', key: routePart });
+        // If we land on a category page coming from the form, update state to Results
+        if (gameState === GameState.Form) {
+            setGameState(GameState.Results);
+        }
+      } else {
+        setRoute({ view: 'quiz' });
+        // If we came from a results page, reset the quiz flow to welcome
+        if (gameState === GameState.Results) {
+           setGameState(GameState.Welcome);
+           setAnswers([]);
+           setCurrentQuestionIndex(0);
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); // Initial load
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [setLanguage, language, gameState]);
+
+
+  // Quiz flow handlers
   const startQuiz = () => {
+    setResults(null); // Clear previous results when starting fresh
     setAnswers([]);
     setCurrentQuestionIndex(0);
     setGameState(GameState.Quiz);
@@ -70,17 +135,12 @@ const QuizFlow: React.FC = () => {
     }
   };
   
-  const goBack = () => {
+  const goBackToQuiz = () => {
     if (gameState === GameState.Form) {
       setGameState(GameState.Quiz);
-      // We are on the form screen, so the last question was just answered.
-      // Set the index to the last question.
       setCurrentQuestionIndex(questions.length - 1);
-    } else if (gameState === GameState.Results) {
-      setGameState(GameState.Form);
     }
   };
-
 
   const handleSubmitData = async (userData: UserData) => {
     let economicScore = 0;
@@ -121,22 +181,39 @@ const QuizFlow: React.FC = () => {
     await saveSubmission(submission);
 
     setResults(finalResults);
-    setGameState(GameState.Results);
+    // Let the router handle the gameState transition by setting the hash.
+    window.location.hash = `#/${language}/${categoryKey}`;
   };
 
   const restartQuiz = () => {
+    setResults(null);
     setGameState(GameState.Welcome);
     setAnswers([]);
     setCurrentQuestionIndex(0);
-    setResults(null);
+    // Navigate to the base URL for the current language
+    window.location.hash = `#/${language}`;
   };
   
-  const renderScreen = () => {
+  const renderContent = () => {
+    if (route.view === 'admin') {
+        return <AdminIndex />;
+    }
+
     if (isLoading) {
       return <div className="text-center text-lg p-8 flex-grow flex items-center justify-center">{t('loadingQuiz')}</div>;
     }
+    
+    if (route.view === 'category' && route.key) {
+        // If we have results in state and they match the URL, show the user's specific results.
+        if (results && results.categoryKey === route.key) {
+            return <ResultsScreen results={results} onRestart={restartQuiz} />;
+        }
+        // Otherwise, show the generic page for that category.
+        return <CategoryScreen categoryKey={route.key} />;
+    }
 
-    if (questions.length === 0) {
+    // Default to quiz flow
+    if (questions.length === 0 && !isLoading) {
       return (
         <div className="text-center bg-white p-8 flex-grow flex flex-col items-center justify-center">
           <h2 className="text-2xl font-bold mb-4">{t('quizNotAvailable.title')}</h2>
@@ -159,62 +236,14 @@ const QuizFlow: React.FC = () => {
           />
         );
       case GameState.Form:
-        return <DataCollectionScreen onSubmit={handleSubmitData} onBack={goBack} />;
+        return <DataCollectionScreen onSubmit={handleSubmitData} onBack={goBackToQuiz} />;
+      // Results are now handled by the router, but have a fallback
       case GameState.Results:
-        return results && <ResultsScreen results={results} onRestart={restartQuiz} onBack={goBack} />;
+        return results ? <ResultsScreen results={results} onRestart={restartQuiz} /> : <WelcomeScreen onStart={startQuiz} />;
       default:
         return <WelcomeScreen onStart={startQuiz} />;
     }
   };
-
-  return <>{renderScreen()}</>;
-};
-
-
-const App: React.FC = () => {
-  const [route, setRoute] = useState<'quiz' | 'admin'>('quiz');
-  const { setLanguage } = useContext(LanguageContext);
-  const validLanguages: Language[] = ['en', 'es', 'pt-BR'];
-
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      const path = hash.replace(/^#\/?/, '');
-      const hashParts = path.split('/');
-
-      let lang: Language = 'en';
-      let currentRoute: 'quiz' | 'admin' = 'quiz';
-      
-      // FIX: This comparison appears to be unintentional because the types 'Language' and '"admin"' have no overlap.
-      // The original code incorrectly asserted that the first part of the hash was always a `Language`,
-      // which caused a type error when it was 'admin'. The logic is now corrected to handle both cases.
-      const potentialLang = hashParts[0];
-      const potentialRoute = hashParts[1];
-
-      const matchedLang = validLanguages.find(l => l === potentialLang);
-
-      if (matchedLang) {
-        lang = matchedLang;
-        if (potentialRoute === 'admin') {
-          currentRoute = 'admin';
-        }
-      } else if (potentialLang === 'admin') {
-        currentRoute = 'admin';
-        // lang remains 'en' (default)
-      }
-      
-      setLanguage(lang);
-      setRoute(currentRoute);
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Initial load
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, [setLanguage]);
-
 
   return (
     <main className="font-sans min-h-screen flex items-center justify-center p-4">
@@ -222,7 +251,7 @@ const App: React.FC = () => {
         <div className="absolute top-4 right-4 z-20">
           <LanguageSwitcher />
         </div>
-        {route === 'admin' ? <AdminIndex /> : <QuizFlow />}
+        {renderContent()}
       </div>
     </main>
   );

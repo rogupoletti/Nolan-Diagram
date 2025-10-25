@@ -33,10 +33,9 @@ const Header: React.FC<HeaderProps> = ({ title, onBack }) => (
 interface ResultsScreenProps {
   results: Results;
   onRestart: () => void;
-  onBack: () => void;
 }
 
-const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBack }) => {
+const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart }) => {
   const { t } = useTranslation();
   const { language } = useContext(LanguageContext);
   const [description, setDescription] = useState<string>('');
@@ -71,7 +70,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
     const shareData = {
         title: shareTitle,
         text: shareText,
-        url: window.location.origin + window.location.pathname,
+        url: window.location.href, // Share the current URL which includes the category
     };
 
     if (navigator.share) {
@@ -112,7 +111,7 @@ const ResultsScreen: React.FC<ResultsScreenProps> = ({ results, onRestart, onBac
 
   return (
     <div className="flex flex-col flex-grow">
-      <Header title={t('results.title')} onBack={onBack}/>
+      <Header title={t('results.title')} />
       <div className="p-6 text-center flex-grow overflow-y-auto min-h-0">
         <h2 className="text-3xl font-extrabold text-gray-900 mb-4">{t('results.yourCompass')}</h2>
         

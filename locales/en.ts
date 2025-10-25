@@ -90,6 +90,9 @@ export const en = {
     title: 'My Political Compass: {category}',
     text: 'I took the quiz and I\'m a {category}! This generally means: "{description}" Find out your own political compass here:',
   },
+  categoryScreen: {
+    prompt: 'Want to find out your own political compass?',
+  },
   admin: {
     title: 'Admin Panel',
     logoutFailed: 'Logout failed. Please try again.',

@@ -7,17 +7,21 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-aut
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
-// IMPORTANT: Replace the following with your app's Firebase project configuration
-// For more information on how to get this, visit: https://firebase.google.com/docs/web/setup#get-config
+// Your web app's Firebase configuration is read from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyDfBJS1Ayp6D2RI4p2BFUk-X5hPqFYbhe8",
-  authDomain: "nolan-diagram.firebaseapp.com",
-  projectId: "nolan-diagram",
-  storageBucket: "nolan-diagram.firebasestorage.app",
-  messagingSenderId: "574344954823",
-  appId: "1:574344954823:web:aff51e7641d44ed68c0fe2",
-  measurementId: "G-Z7LQHX3CK7"
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID
 };
+
+// Basic validation to ensure Firebase config is present
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    throw new Error("Firebase configuration is missing. Please set the FIREBASE environment variables.");
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

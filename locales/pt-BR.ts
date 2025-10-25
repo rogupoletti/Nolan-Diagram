@@ -90,6 +90,9 @@ export const ptBR = {
     title: 'Minha Bússola Política: {category}',
     text: 'Eu fiz o questionário e sou {category}! Isso geralmente significa: "{description}" Descubra sua própria bússola política aqui:',
   },
+  categoryScreen: {
+    prompt: 'Quer descobrir sua própria bússola política?',
+  },
   admin: {
     title: 'Painel do Administrador',
     logoutFailed: 'Falha ao sair. Por favor, tente novamente.',
