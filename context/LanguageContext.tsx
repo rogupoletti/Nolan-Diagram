@@ -1,5 +1,6 @@
 import React, { createContext, useState, ReactNode } from 'react';
 import { Language } from '../types';
+import { DEFAULT_LANGUAGE } from '../config';
 
 interface LanguageContextType {
   language: Language;
@@ -7,7 +8,7 @@ interface LanguageContextType {
 }
 
 export const LanguageContext = createContext<LanguageContextType>({
-  language: 'en',
+  language: DEFAULT_LANGUAGE,
   setLanguage: () => console.warn('no language provider'),
 });
 
@@ -16,7 +17,7 @@ interface LanguageProviderProps {
 }
 
 export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage }}>

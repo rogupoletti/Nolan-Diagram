@@ -12,6 +12,7 @@ import { LanguageContext } from './context/LanguageContext';
 import { useTranslation } from './hooks/useTranslation';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import { VALID_LANGUAGES } from './constants';
+import { DEFAULT_LANGUAGE } from './config';
 
 const getPoliticalCategoryKey = (economic: number, personal: number): string => {
   if (economic > 10 && personal > 10) return "libertarian";
@@ -43,8 +44,8 @@ const RouteHandler: React.FC<{
         setLanguage(lang as Language);
       }
     } else if (lang) {
-      // Invalid language, redirect to default (en)
-      navigate(`/en`, { replace: true });
+      // Invalid language, redirect to default
+      navigate(`/${DEFAULT_LANGUAGE}`, { replace: true });
     }
   }, [lang, currentLanguage, setLanguage, navigate]);
 

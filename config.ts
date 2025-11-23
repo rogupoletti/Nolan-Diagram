@@ -7,3 +7,6 @@ export const FIREBASE_CONFIG = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
+
+// Application Configuration
+export const DEFAULT_LANGUAGE = 'pt-BR' as const;
