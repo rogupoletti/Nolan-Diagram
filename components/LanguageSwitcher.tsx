@@ -1,4 +1,5 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LanguageContext } from '../context/LanguageContext';
 import { Language } from '../types';
 
@@ -13,25 +14,36 @@ const LanguageSwitcher: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const currentLang = LANGUAGES.find(l => l.id === language) || LANGUAGES[0];
 
   const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
-    
-    const path = window.location.hash.replace(/^#\/?/, '');
-    const hashParts = path.split('/');
+
+    // Get current path parts
+    const pathParts = location.pathname.split('/').filter(Boolean);
     const validLanguages = LANGUAGES.map(l => l.id);
 
-    let routePart = '';
-    // Check if the current route is admin
-    if (hashParts[0] === 'admin' || (validLanguages.includes(hashParts[0] as Language) && hashParts[1] === 'admin')) {
-      routePart = '/admin';
+    // Remove current language if present
+    let cleanPathParts = pathParts;
+    if (pathParts.length > 0 && validLanguages.includes(pathParts[0] as Language)) {
+      cleanPathParts = pathParts.slice(1);
     }
 
-    window.location.hash = `/${lang}${routePart}`;
+    // Construct new path
+    let newPath;
+    if (cleanPathParts.length > 0) {
+      newPath = `/${lang}/${cleanPathParts.join('/')}`;
+    } else {
+      newPath = `/${lang}`;
+    }
+
+    navigate(newPath);
     setIsOpen(false);
   };
-  
+
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -53,7 +65,7 @@ const LanguageSwitcher: React.FC = () => {
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        <span>{currentLang.flag}</span>        
+        <span>{currentLang.flag}</span>
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>

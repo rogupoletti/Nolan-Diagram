@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { QuizQuestion, Answer, GameState, UserData, Results, Submission, Language } from './types';
 import WelcomeScreen from './components/WelcomeScreen';
 import QuizScreen from './components/QuizScreen';
@@ -10,30 +11,52 @@ import { saveSubmission, getQuestions } from './services/dbService';
 import { LanguageContext } from './context/LanguageContext';
 import { useTranslation } from './hooks/useTranslation';
 import LanguageSwitcher from './components/LanguageSwitcher';
-import { CATEGORY_KEYS, VALID_LANGUAGES } from './constants';
+import { VALID_LANGUAGES } from './constants';
 
 const getPoliticalCategoryKey = (economic: number, personal: number): string => {
-    if (economic > 10 && personal > 10) return "libertarian";
-    if (economic < -10 && personal > 10) return "left_liberal";
-    if (economic > 10 && personal < -10) return "right_conservative";
-    if (economic < -10 && personal < -10) return "authoritarian";
-    if (Math.abs(economic) <= 10 && Math.abs(personal) <= 10) return "centrist";
-    
-    if (economic > 10) return "economic_right";
-    if (economic < -10) return "economic_left";
-    if (personal > 10) return "social_libertarian";
-    if (personal < -10) return "social_authoritarian";
-    
-    return "centrist";
+  if (economic > 10 && personal > 10) return "libertarian";
+  if (economic < -10 && personal > 10) return "left_liberal";
+  if (economic > 10 && personal < -10) return "right_conservative";
+  if (economic < -10 && personal < -10) return "authoritarian";
+  if (Math.abs(economic) <= 10 && Math.abs(personal) <= 10) return "centrist";
+
+  if (economic > 10) return "economic_right";
+  if (economic < -10) return "economic_left";
+  if (personal > 10) return "social_libertarian";
+  if (personal < -10) return "social_authoritarian";
+
+  return "centrist";
+};
+
+// Wrapper component to handle language and category params
+const RouteHandler: React.FC<{
+  element: React.ReactNode;
+  setLanguage: (lang: Language) => void;
+  currentLanguage: Language;
+}> = ({ element, setLanguage, currentLanguage }) => {
+  const { lang, category } = useParams<{ lang?: string; category?: string }>();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (lang && VALID_LANGUAGES.includes(lang as Language)) {
+      if (lang !== currentLanguage) {
+        setLanguage(lang as Language);
+      }
+    } else if (lang) {
+      // Invalid language, redirect to default (en)
+      navigate(`/en`, { replace: true });
+    }
+  }, [lang, currentLanguage, setLanguage, navigate]);
+
+  return <>{element}</>;
 };
 
 
 const App: React.FC = () => {
   const { t } = useTranslation();
   const { language, setLanguage } = useContext(LanguageContext);
-  
-  // App-level routing state
-  const [route, setRoute] = useState<{ view: 'quiz' | 'admin' | 'category'; key?: string }>({ view: 'quiz' });
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Quiz-specific state
   const [gameState, setGameState] = useState<GameState>(GameState.Welcome);
@@ -54,66 +77,23 @@ const App: React.FC = () => {
     fetchQuestions();
   }, []);
 
-  // Main router effect
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      const path = hash.replace(/^#\/?/, '');
-      const hashParts = path.split('/'); // e.g., "en/libertarian" -> ["en", "libertarian"]
-
-      let lang: Language = 'en';
-      let routePart = '';
-
-      const firstPartIsLang = VALID_LANGUAGES.includes(hashParts[0] as Language);
-      
-      if (firstPartIsLang) {
-        lang = hashParts[0] as Language;
-        routePart = hashParts[1];
-      } else {
-        routePart = hashParts[0];
-      }
-
-      if (lang !== language) {
-        setLanguage(lang);
-      }
-      
-      if (routePart === 'admin') {
-        setRoute({ view: 'admin' });
-      } else if (CATEGORY_KEYS.includes(routePart)) {
-        setRoute({ view: 'category', key: routePart });
-        // If we land on a category page coming from the form, update state to Results
-        if (gameState === GameState.Form) {
-            setGameState(GameState.Results);
-        }
-      } else {
-        setRoute({ view: 'quiz' });
-        // If we came from a results page, reset the quiz flow to welcome
-        if (gameState === GameState.Results) {
-           setGameState(GameState.Welcome);
-           setAnswers([]);
-           setCurrentQuestionIndex(0);
-        }
-      }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange(); // Initial load
-
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, [setLanguage, language, gameState]);
-
   // Update page title based on route and language
   useEffect(() => {
-    const baseTitle = t('welcome.title'); // e.g., "Nolan Quiz"
+    const baseTitle = t('welcome.title');
     let pageTitle = baseTitle;
 
-    if (route.view === 'admin') {
+    if (location.pathname.includes('/admin')) {
       pageTitle = `${t('admin.title')} | ${baseTitle}`;
-    } else if (route.view === 'category' && route.key) {
-      const categoryName = t(`categories.${route.key}`);
-      pageTitle = `${categoryName} | ${baseTitle}`;
+    } else if (location.pathname.includes('/category/')) { // Check for category in path
+      // This is a bit tricky without the exact param, but we can infer or let the child component handle it.
+      // For now, let's rely on the specific screens to set titles if needed, or just keep generic.
+      // Or we can parse location.pathname manually if we really want it here.
+      const pathParts = location.pathname.split('/');
+      const category = pathParts[pathParts.length - 1]; // simplistic
+      if (category && !['en', 'es', 'pt-BR'].includes(category)) {
+        const categoryName = t(`categories.${category}`);
+        pageTitle = `${categoryName} | ${baseTitle}`;
+      }
     } else {
       switch (gameState) {
         case GameState.Welcome:
@@ -137,14 +117,14 @@ const App: React.FC = () => {
           pageTitle = baseTitle;
       }
     }
-    
+
     document.title = pageTitle;
-  }, [route, gameState, results, t]);
+  }, [location, gameState, results, t]);
 
 
   // Quiz flow handlers
   const startQuiz = () => {
-    setResults(null); // Clear previous results when starting fresh
+    setResults(null);
     setAnswers([]);
     setCurrentQuestionIndex(0);
     setGameState(GameState.Quiz);
@@ -160,7 +140,7 @@ const App: React.FC = () => {
       setGameState(GameState.Form);
     }
   };
-  
+
   const handleBack = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
@@ -169,7 +149,7 @@ const App: React.FC = () => {
       setGameState(GameState.Welcome);
     }
   };
-  
+
   const goBackToQuiz = () => {
     if (gameState === GameState.Form) {
       setGameState(GameState.Quiz);
@@ -183,7 +163,7 @@ const App: React.FC = () => {
 
     const economicQuestions = questions.filter(q => q.type === 'economic');
     const personalQuestions = questions.filter(q => q.type === 'personal');
-    
+
     const maxEconomicScore = economicQuestions.reduce((sum, q) => sum + Math.abs(q.weight) * 2, 0);
     const maxPersonalScore = personalQuestions.reduce((sum, q) => sum + Math.abs(q.weight) * 2, 0);
 
@@ -195,7 +175,7 @@ const App: React.FC = () => {
         personalScore += score;
       }
     });
-    
+
     const finalEconomicScore = maxEconomicScore > 0 ? (economicScore / maxEconomicScore) * 100 : 0;
     const finalPersonalScore = maxPersonalScore > 0 ? (personalScore / maxPersonalScore) * 100 : 0;
     const categoryKey = getPoliticalCategoryKey(finalEconomicScore, finalPersonalScore);
@@ -205,7 +185,7 @@ const App: React.FC = () => {
       personal: finalPersonalScore,
       categoryKey,
     };
-    
+
     const submission: Omit<Submission, 'id'> = {
       userData,
       answers,
@@ -216,8 +196,8 @@ const App: React.FC = () => {
     await saveSubmission(submission);
 
     setResults(finalResults);
-    // Let the router handle the gameState transition by setting the hash.
-    window.location.hash = `#/${language}/${categoryKey}`;
+    setGameState(GameState.Results);
+    navigate(`/${language}/${categoryKey}`);
   };
 
   const restartQuiz = () => {
@@ -225,29 +205,14 @@ const App: React.FC = () => {
     setGameState(GameState.Welcome);
     setAnswers([]);
     setCurrentQuestionIndex(0);
-    // Navigate to the base URL for the current language
-    window.location.hash = `#/${language}`;
+    navigate(`/${language}`);
   };
-  
-  const renderContent = () => {
-    if (route.view === 'admin') {
-        return <AdminIndex />;
-    }
 
+  const QuizContent = () => {
     if (isLoading) {
       return <div className="text-center text-lg p-8 flex-grow flex items-center justify-center">{t('loadingQuiz')}</div>;
     }
-    
-    if (route.view === 'category' && route.key) {
-        // If we have results in state and they match the URL, show the user's specific results.
-        if (results && results.categoryKey === route.key) {
-            return <ResultsScreen results={results} onRestart={restartQuiz} />;
-        }
-        // Otherwise, show the generic page for that category.
-        return <CategoryScreen categoryKey={route.key} />;
-    }
 
-    // Default to quiz flow
     if (questions.length === 0 && !isLoading) {
       return (
         <div className="text-center bg-white p-8 flex-grow flex flex-col items-center justify-center">
@@ -272,15 +237,32 @@ const App: React.FC = () => {
         );
       case GameState.Form:
         return <DataCollectionScreen onSubmit={handleSubmitData} onBack={goBackToQuiz} />;
-      // Results are now handled by the router, but have a fallback
       case GameState.Results:
+        // If we are in Results state but URL is just /, show results.
+        // Ideally we should redirect to /lang/category, which handleSubmitData does.
+        // But if we are here, it means we are rendering the quiz flow.
         return results ? <ResultsScreen results={results} onRestart={restartQuiz} /> : <WelcomeScreen onStart={startQuiz} />;
       default:
         return <WelcomeScreen onStart={startQuiz} />;
     }
   };
 
-  const containerMaxWidth = route.view === 'admin' ? 'max-w-6xl' : 'max-w-md';
+  const CategoryPage = () => {
+    const { category } = useParams<{ category: string }>();
+
+    // If we have results in state and they match the URL, show the user's specific results.
+    if (results && results.categoryKey === category) {
+      return <ResultsScreen results={results} onRestart={restartQuiz} />;
+    }
+
+    // Otherwise, show the generic page for that category.
+    if (category) {
+      return <CategoryScreen categoryKey={category} />;
+    }
+    return <QuizContent />;
+  };
+
+  const containerMaxWidth = location.pathname.includes('/admin') ? 'max-w-6xl' : 'max-w-md';
 
   return (
     <main className="font-sans min-h-screen flex items-center justify-center p-4 md:p-8">
@@ -288,7 +270,28 @@ const App: React.FC = () => {
         <div className="absolute top-4 right-4 z-20">
           <LanguageSwitcher />
         </div>
-        {renderContent()}
+
+        <Routes>
+          {/* Admin routes must come first to avoid being caught by :lang/:category */}
+          <Route path="/admin" element={<AdminIndex />} />
+          <Route path="/:lang/admin" element={<AdminIndex />} />
+
+          <Route path="/:lang" element={
+            <RouteHandler setLanguage={setLanguage} currentLanguage={language} element={<QuizContent />} />
+          } />
+
+          <Route path="/:lang/:category" element={
+            <RouteHandler setLanguage={setLanguage} currentLanguage={language} element={<CategoryPage />} />
+          } />
+
+          <Route path="/" element={
+            <RouteHandler setLanguage={setLanguage} currentLanguage={language} element={<QuizContent />} />
+          } />
+
+          {/* Catch all redirect to default lang */}
+          <Route path="*" element={<QuizContent />} />
+
+        </Routes>
       </div>
     </main>
   );
